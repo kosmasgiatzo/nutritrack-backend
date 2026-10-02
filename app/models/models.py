@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from sqlalchemy import (
     String, Numeric, Boolean, Date, DateTime, Integer,
     ForeignKey, CheckConstraint, UniqueConstraint
@@ -9,13 +9,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     profile: Mapped["UserProfile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
     meal_logs: Mapped[list["MealLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -40,7 +44,7 @@ class UserProfile(Base):
     protein_target_g: Mapped[int] = mapped_column(nullable=False)
     carbs_target_g: Mapped[int] = mapped_column(nullable=False)
     fat_target_g: Mapped[int] = mapped_column(nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     user: Mapped["User"] = relationship(back_populates="profile")
 
@@ -94,7 +98,7 @@ class MealLog(Base):
     protein_g: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
     carbs_g: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
     fat_g: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     user: Mapped["User"] = relationship(back_populates="meal_logs")
     food: Mapped["Food"] = relationship()
@@ -107,8 +111,8 @@ class WaterIntake(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     log_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     amount_ml: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     __table_args__ = (
         UniqueConstraint("user_id", "log_date", name="uq_user_water_date"),
@@ -124,8 +128,8 @@ class WeightLog(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     log_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     weight_kg: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     __table_args__ = (
         UniqueConstraint("user_id", "log_date", name="uq_user_weight_date"),
