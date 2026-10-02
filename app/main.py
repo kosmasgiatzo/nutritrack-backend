@@ -9,8 +9,9 @@ from app.api.v1.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Δημιουργεί αυτόματα στη βάση όσους πίνακες λείπουν (π.χ. weight_logs)
-    Base.metadata.create_all(bind=engine)
+    # Ασύγχρονη δημιουργία των πινάκων που λείπουν (συμβατό με AsyncEngine)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
 
 
