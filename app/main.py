@@ -1,11 +1,23 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.database import engine, Base
+from app.models import models  # Φορτώνει όλα τα μοντέλα (User, WeightLog κλπ.)
 from app.api.v1.router import api_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Δημιουργεί αυτόματα στη βάση όσους πίνακες λείπουν (π.χ. weight_logs)
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan,
 )
 
 # Επιτρέπουμε κλήσεις από το Mobile App / Frontend
@@ -18,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
 
 @app.get("/health")
 async def health_check():
